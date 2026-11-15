@@ -35,14 +35,12 @@ init =
     in
     { todoText = ""
     , tasks = initialTasks
-    , displayedTasks = initialTasks
     }
 
 
 type alias Model =
     { todoText : String
     , tasks : List Task
-    , displayedTasks : List Task
     }
 
 
@@ -75,6 +73,10 @@ type Msg
 
 view : Model -> Html Msg
 view model =
+    let
+        displayedTasks =
+            model.tasks
+    in
     div
         [ style "display" "flex"
         , style "flex-direction" "column"
@@ -91,7 +93,7 @@ view model =
         , section
             []
             [ input [ value model.todoText, placeholder "What need to be done?", onInput TodoTextInputChanged, onEnter TaskAddRequested ] []
-            , ul [] (List.map toRenderedTaskItemWithCheckbox model.displayedTasks)
+            , ul [] (List.map toRenderedTaskItemWithCheckbox displayedTasks)
             ]
         ]
 
@@ -144,7 +146,6 @@ update msg model =
             in
             ( { model
                 | tasks = newTask :: model.tasks
-                , displayedTasks = newTask :: model.displayedTasks
                 , todoText = ""
               }
             , Cmd.none
