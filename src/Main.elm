@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser
 import Html exposing (Html, div, h1, input, label, li, p, section, text, ul)
 import Html.Attributes exposing (checked, for, id, placeholder, style, type_, value)
-import Html.Events exposing (onInput)
+import Html.Events exposing (onCheck, onInput)
 import Html.Events.Extra exposing (onEnter)
 import Task as ElmTask
 import Time
@@ -56,7 +56,7 @@ type Msg
     = TodoTextInputChanged String
     | TaskAddRequested
     | TaskAdded Time.Posix String
-    | TaskToggled
+    | TaskToggled String Bool
     | TaskEditing
     | TaskRemoved
     | CompletedTasksRemoved
@@ -101,7 +101,7 @@ view model =
 toRenderedTaskItemWithCheckbox : Task -> Html Msg
 toRenderedTaskItemWithCheckbox task =
     li []
-        [ input [ id task.id, type_ "checkbox", checked task.completed ] []
+        [ input [ id task.id, type_ "checkbox", checked task.completed, onCheck (TaskToggled task.id) ] []
         , label [ for task.id ]
             [ p
                 [ style "display" "inline", lineThroughWhenCompletedFor task ]
@@ -130,6 +130,17 @@ lineThroughWhenCompletedFor task =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        TaskToggled targetId isChecked ->
+            let
+                toggleStatusIfMatch task =
+                    if task.id == targetId then
+                        { task | completed = isChecked }
+
+                    else
+                        task
+            in
+            ( { model | tasks = List.map toggleStatusIfMatch model.tasks }, Cmd.none )
+
         TodoTextInputChanged newText ->
             ( { model | todoText = newText }, Cmd.none )
 
