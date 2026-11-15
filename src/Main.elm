@@ -62,7 +62,9 @@ type Msg
     | TaskAddRequested
     | TaskAdded Time.Posix String
     | TaskToggled TaskId Bool
-    | TaskEditing
+    | TaskEditing TaskId
+    | TaskEdited TaskId String
+    | TaskEditCancelled
     | TaskRemoved TaskId
     | CompletedTasksRemoved
     | ActiveTasksDisplayed
