@@ -137,22 +137,10 @@ update msg model =
             ( { model | todoText = newText }, Cmd.none )
 
         TaskAddRequested ->
-            ( model, ElmTask.perform (\time -> TaskAdded time model.todoText) Time.now )
+            requestTaskCreation model
 
         TaskAdded time newText ->
-            let
-                idFromTime =
-                    (String.fromInt << Time.posixToMillis) time
-
-                newTask =
-                    { id = idFromTime, text = newText, completed = False, editing = False }
-            in
-            ( { model
-                | tasks = newTask :: model.tasks
-                , todoText = ""
-              }
-            , Cmd.none
-            )
+            addTaskToSystem time newText model
 
         _ ->
             ( model, Cmd.none )
@@ -162,6 +150,28 @@ update msg model =
 ----------------
 --- HANDLERS ---
 ----------------
+
+
+requestTaskCreation : Model -> ( Model, Cmd Msg )
+requestTaskCreation model =
+    ( model, Time.now |> ElmTask.perform (prepareTaskWithText model.todoText) )
+
+
+prepareTaskWithText : String -> Time.Posix -> Msg
+prepareTaskWithText todoText currentTime =
+    TaskAdded currentTime todoText
+
+
+addTaskToSystem : Time.Posix -> String -> Model -> ( Model, Cmd Msg )
+addTaskToSystem time newText model =
+    let
+        newTask =
+            createTaskFor time newText
+
+        updatedModel =
+            addTask newTask model
+    in
+    ( updatedModel, Cmd.none )
 
 
 toggleTaskStatusFor : String -> Bool -> List Task -> List Task
@@ -175,3 +185,17 @@ toggleTaskStatusFor targetId isChecked tasks =
                 task
     in
     List.map toggleStatusIfMatch tasks
+
+
+createTaskFor : Time.Posix -> String -> Task
+createTaskFor time todoText =
+    let
+        idFromTime =
+            (String.fromInt << Time.posixToMillis) time
+    in
+    { id = idFromTime, text = todoText, completed = False, editing = False }
+
+
+addTask : Task -> Model -> Model
+addTask newTask model =
+    { model | tasks = newTask :: model.tasks, todoText = "" }
