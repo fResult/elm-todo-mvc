@@ -1,7 +1,8 @@
 module Main exposing (main)
 
 import Browser
-import Html exposing (Html, h1, text)
+import Html exposing (Html, div, h1, input, label, li, p, section, text, ul)
+import Html.Attributes exposing (checked, for, id, style, type_)
 
 
 main : Program () Model Msg
@@ -68,13 +69,46 @@ type Msg
 
 view : Model -> Html Msg
 view model =
-    h1
-        [ style "font-size" "80px"
-        , style "font-weight" "200"
-        , style "color" "#b83f45"
-        , style "text-transform" "uppercase"
+    div
+        [ style "display" "flex"
+        , style "flex-direction" "column"
+        , style "align-items" "center"
+        , style "justify-content" "center"
         ]
-        [ text "Todos" ]
+        [ h1
+            [ style "font-size" "80px"
+            , style "font-weight" "200"
+            , style "color" "#b83f45"
+            , style "text-transform" "uppercase"
+            ]
+            [ text "Todos" ]
+        , section
+            []
+            [ ul [] (List.map toRenderedTaskItemWithCheckbox model.displayedTasks) ]
+        ]
+
+
+toRenderedTaskItemWithCheckbox : Task -> Html Msg
+toRenderedTaskItemWithCheckbox task =
+    li []
+        [ input [ id task.id, type_ "checkbox", checked task.completed ] []
+        , label [ for task.id ]
+            [ p
+                [ style "display" "inline", lineThroughWhenCompletedFor task ]
+                [ text task.text ]
+            ]
+        ]
+
+
+lineThroughWhenCompletedFor : Task -> Html.Attribute Msg
+lineThroughWhenCompletedFor task =
+    style "text-decoration"
+        (if task.completed then
+            "line-through"
+
+         else
+            "none"
+        )
 
 
 
