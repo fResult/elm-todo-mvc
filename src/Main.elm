@@ -1,9 +1,10 @@
 module Main exposing (main)
 
 import Browser
-import Html exposing (Html, div, h1, input, label, li, p, section, text, ul)
+import Html exposing (Html, button, div, h1, input, label, li, p, section, text, ul)
 import Html.Attributes exposing (checked, for, id, placeholder, style, type_, value)
-import Html.Events exposing (onCheck, onInput)
+import Html.Attributes.Aria exposing (ariaLabel)
+import Html.Events exposing (onCheck, onClick, onInput)
 import Html.Events.Extra exposing (onEnter)
 import Task as ElmTask
 import Time
@@ -52,13 +53,17 @@ type alias Task =
     }
 
 
+type alias TaskId =
+    String
+
+
 type Msg
     = TodoTextInputChanged String
     | TaskAddRequested
     | TaskAdded Time.Posix String
-    | TaskToggled String Bool
+    | TaskToggled TaskId Bool
     | TaskEditing
-    | TaskRemoved
+    | TaskRemoved TaskId
     | CompletedTasksRemoved
     | ActiveTasksDisplayed
     | CompletedTasksDisplayed
@@ -105,7 +110,14 @@ toRenderedTaskItemWithCheckbox task =
         , label [ for task.id ]
             [ p
                 [ style "display" "inline", lineThroughWhenCompletedFor task ]
-                [ text task.text ]
+                [ text task.text
+                , button
+                    [ style "padding" "4px"
+                    , ariaLabel "Remove Task"
+                    , onClick (TaskRemoved task.id)
+                    ]
+                    [ text "🗑️" ]
+                ]
             ]
         ]
 
@@ -142,6 +154,9 @@ update msg model =
         TaskAdded time newText ->
             addTaskToSystem time newText model
 
+        TaskRemoved targetId ->
+            ( { model | tasks = discardTaskFor targetId model.tasks }, Cmd.none )
+
         _ ->
             ( model, Cmd.none )
 
@@ -160,6 +175,16 @@ requestTaskCreation model =
 prepareTaskWithText : String -> Time.Posix -> Msg
 prepareTaskWithText todoText currentTime =
     TaskAdded currentTime todoText
+
+
+discardTaskFor : TaskId -> List Task -> List Task
+discardTaskFor targetId tasks =
+    List.filter (keepIfNotMatchFor targetId) tasks
+
+
+keepIfNotMatchFor : TaskId -> Task -> Bool
+keepIfNotMatchFor targetId task =
+    task.id /= targetId
 
 
 addTaskToSystem : Time.Posix -> String -> Model -> ( Model, Cmd Msg )
