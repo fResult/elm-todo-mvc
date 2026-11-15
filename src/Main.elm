@@ -2,15 +2,20 @@ module Main exposing (main)
 
 import Browser
 import Html exposing (Html, div, h1, input, label, li, p, section, text, ul)
-import Html.Attributes exposing (checked, for, id, style, type_)
+import Html.Attributes exposing (checked, for, id, placeholder, style, type_, value)
+import Html.Events exposing (onInput)
+import Html.Events.Extra exposing (onEnter)
+import Task as ElmTask
+import Time
 
 
 main : Program () Model Msg
 main =
-    Browser.sandbox
-        { init = init
+    Browser.element
+        { init = \_ -> ( init, Cmd.none )
         , view = view
         , update = update
+        , subscriptions = \_ -> Sub.none
         }
 
 
@@ -51,7 +56,8 @@ type alias Task =
 
 type Msg
     = TodoTextInputChanged String
-    | TaskAdded
+    | TaskAddRequested
+    | TaskAdded Time.Posix String
     | TaskToggled
     | TaskEditing
     | TaskRemoved
@@ -84,7 +90,9 @@ view model =
             [ text "Todos" ]
         , section
             []
-            [ ul [] (List.map toRenderedTaskItemWithCheckbox model.displayedTasks) ]
+            [ input [ value model.todoText, placeholder "What need to be done?", onInput TodoTextInputChanged, onEnter TaskAddRequested ] []
+            , ul [] (List.map toRenderedTaskItemWithCheckbox model.displayedTasks)
+            ]
         ]
 
 
@@ -117,8 +125,30 @@ lineThroughWhenCompletedFor task =
 --------------
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        TodoTextInputChanged newText ->
+            ( { model | todoText = newText }, Cmd.none )
+
+        TaskAddRequested ->
+            ( model, ElmTask.perform (\time -> TaskAdded time model.todoText) Time.now )
+
+        TaskAdded time newText ->
+            let
+                idFromTime =
+                    (String.fromInt << Time.posixToMillis) time
+
+                newTask =
+                    { id = idFromTime, text = newText, completed = False, editing = False }
+            in
+            ( { model
+                | tasks = newTask :: model.tasks
+                , displayedTasks = newTask :: model.displayedTasks
+                , todoText = ""
+              }
+            , Cmd.none
+            )
+
         _ ->
-            model
+            ( model, Cmd.none )
