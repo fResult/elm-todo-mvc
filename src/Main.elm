@@ -1,3 +1,6 @@
+import Html exposing (Html, h1, text)
+
+
 --------------
 --- MODELS ---
 --------------
@@ -42,3 +45,33 @@ type Msg
     | ActiveTasksDisplayed
     | CompletedTasksDisplayed
     | AllTasksDisplayed
+
+
+
+-------------
+--- VIEWS ---
+-------------
+
+
+view : Model -> Html Msg
+view model =
+    h1
+        [ style "font-size" "80px"
+        , style "font-weight" "200"
+        , style "color" "#b83f45"
+        , style "text-transform" "uppercase"
+        ]
+        [ text "Todos" ]
+
+
+
+--------------
+--- UPDATE ---
+--------------
+
+
+update : Msg -> Model -> Model
+update msg model =
+    case msg of
+        _ ->
+            model
