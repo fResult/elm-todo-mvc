@@ -131,15 +131,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         TaskToggled targetId isChecked ->
-            let
-                toggleStatusIfMatch task =
-                    if task.id == targetId then
-                        { task | completed = isChecked }
-
-                    else
-                        task
-            in
-            ( { model | tasks = List.map toggleStatusIfMatch model.tasks }, Cmd.none )
+            ( { model | tasks = toggleTaskStatusFor targetId isChecked model.tasks }, Cmd.none )
 
         TodoTextInputChanged newText ->
             ( { model | todoText = newText }, Cmd.none )
@@ -164,3 +156,22 @@ update msg model =
 
         _ ->
             ( model, Cmd.none )
+
+
+
+----------------
+--- HANDLERS ---
+----------------
+
+
+toggleTaskStatusFor : String -> Bool -> List Task -> List Task
+toggleTaskStatusFor targetId isChecked tasks =
+    let
+        toggleStatusIfMatch task =
+            if task.id == targetId then
+                { task | completed = isChecked }
+
+            else
+                task
+    in
+    List.map toggleStatusIfMatch tasks
