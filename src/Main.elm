@@ -250,7 +250,11 @@ update msg model =
             ( { model | todoText = newText }, Cmd.none )
 
         TaskCreateRequested ->
-            ( model, Time.now |> ElmTask.perform TimeReceivedForNewTask )
+            if hasText model.todoText then
+                ( model, Time.now |> ElmTask.perform TimeReceivedForNewTask )
+
+            else
+                ( model, Cmd.none )
 
         TimeReceivedForNewTask currentTime ->
             update (TaskCreated (prepareTask model.todoText currentTime)) model
@@ -407,3 +411,13 @@ pluralizeRegular text count =
 unwords : List String -> String
 unwords =
     String.join " "
+
+
+hasText : String -> Bool
+hasText =
+    not << String.isEmpty << stripped
+
+
+stripped : String -> String
+stripped =
+    String.trim
