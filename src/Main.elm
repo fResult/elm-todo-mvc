@@ -2,7 +2,7 @@ module Main exposing (main, unwords)
 
 import Browser
 import Html exposing (Html, button, div, h1, input, label, li, p, section, text, ul)
-import Html.Attributes exposing (checked, for, id, placeholder, style, type_, value)
+import Html.Attributes exposing (checked, class, for, id, placeholder, style, type_, value)
 import Html.Attributes.Aria exposing (ariaLabel)
 import Html.Events exposing (onCheck, onClick, onInput)
 import Html.Events.Extra exposing (onEnter)
@@ -110,10 +110,18 @@ view model =
             []
             [ input [ value model.todoText, placeholder "What need to be done?", onInput TodoTextInputChanged, onEnter TaskCreateRequested ] []
             , ul [] (List.map toRenderedTaskItemWithCheckbox displayedTasks)
-            , div []
-                [ button [onClick AllTasksDisplayed] [ text "All" ]
-                , button [onClick ActiveTasksDisplayed] [ text "Active" ]
-                , button [onClick CompletedTasksDisplayed] [ text "Completed" ]
+            , div
+                [ class "todo-list--footer"
+                , style "width" "100%"
+                , style "display" "flex"
+                , style "justify-content" "space-between"
+                ]
+                [ p [] [ text (itemsLeftMessageFor (activeTasksFor model.tasks)) ]
+                , div [ class "button-group", style "display" "flex", style "align-items" "center" ]
+                    [ button [ onClick AllTasksDisplayed ] [ text "All" ]
+                    , button [ onClick ActiveTasksDisplayed ] [ text "Active" ]
+                    , button [ onClick CompletedTasksDisplayed ] [ text "Completed" ]
+                    ]
                 ]
             ]
         ]
@@ -202,10 +210,25 @@ filterTasks visibility tasks =
             tasks
 
         ActiveTasks ->
-            List.filter (\task -> not task.completed) tasks
+            activeTasksFor tasks
 
         CompletedTasks ->
-            List.filter (\task -> task.completed) tasks
+            List.filter isTaskCompleted tasks
+
+
+activeTasksFor : List Task -> List Task
+activeTasksFor tasks =
+    List.filter isTaskActive tasks
+
+
+isTaskCompleted : Task -> Bool
+isTaskCompleted task =
+    task.completed == True
+
+
+isTaskActive : Task -> Bool
+isTaskActive =
+    not << isTaskCompleted
 
 
 discardTaskFor : TaskId -> List Task -> List Task
@@ -244,6 +267,18 @@ createTaskFor id todoText =
 addTask : Task -> Model -> Model
 addTask newTask model =
     { model | tasks = newTask :: model.tasks, todoText = "" }
+
+
+itemsLeftMessageFor : List Task -> String
+itemsLeftMessageFor tasks =
+    let
+        count =
+            List.length tasks
+
+        words =
+            [ String.fromInt count, pluralizeRegular "item" count, "left" ]
+    in
+    unwords words
 
 
 
