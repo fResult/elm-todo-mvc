@@ -271,8 +271,8 @@ isTaskActive =
 
 
 discardTaskFor : TaskId -> Dict TaskId Task -> Dict TaskId Task
-discardTaskFor targetId tasks =
-    Dict.remove targetId tasks
+discardTaskFor  =
+    Dict.remove
 
 
 discardCompletedTasks : Dict TaskId Task -> Dict TaskId Task
