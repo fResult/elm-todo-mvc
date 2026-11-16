@@ -107,8 +107,21 @@ view model =
             ]
             [ text "Todos" ]
         , section
-            []
-            [ input [ value model.todoText, placeholder "What need to be done?", onInput TodoTextInputChanged, onEnter TaskCreateRequested ] []
+            [ style "min-width" "300px"
+            , style "display" "flex"
+            , style "flex-direction" "column"
+            , style "align-items" "center"
+            , style "gap" "8px"
+            ]
+            [ input
+                [ id "todo-text"
+                , placeholder "What need to be done?"
+                , ariaLabel "Todo Text"
+                , onInput TodoTextInputChanged
+                , onEnter TaskCreateRequested
+                , value model.todoText
+                ]
+                []
             , ul [] (List.map toRenderedTaskItemWithCheckbox displayedTasks)
             , div
                 [ class "todo-list--footer"
