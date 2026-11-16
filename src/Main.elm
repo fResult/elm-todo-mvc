@@ -1,6 +1,7 @@
 module Main exposing (main, unwords)
 
 import Browser
+import Dict exposing (Dict)
 import Html exposing (Html, button, div, h1, input, label, li, p, section, text, ul)
 import Html.Attributes exposing (checked, class, for, id, placeholder, style, type_, value)
 import Html.Attributes.Aria exposing (ariaLabel)
@@ -30,9 +31,13 @@ init : Model
 init =
     let
         initialTasks =
-            [ { id = "1794737613522", text = "Redesign Website", completed = False, editing = False }
-            , { id = "1794737200701", text = "Do some nerdy stuff", completed = True, editing = False }
-            ]
+            Dict.fromList
+                [ ( "1794737613522", { id = "1794737613522", text = "Redesign Website", completed = False, editing = False } )
+                , ( "1794737200701", { id = "1794737200701", text = "Do some nerdy stuff", completed = True, editing = False } )
+                , ( "1794737890123", { id = "1794737890123", text = "Buy milk and coffee beans", completed = False, editing = False } )
+                , ( "1794738123456", { id = "1794738123456", text = "Write unit tests for Elm architecture", completed = False, editing = True } )
+                , ( "1794739567890", { id = "1794739567890", text = "Review pull requests", completed = True, editing = False } )
+                ]
     in
     { todoText = ""
     , tasks = initialTasks
@@ -42,7 +47,7 @@ init =
 
 type alias Model =
     { todoText : String
-    , tasks : List Task
+    , tasks : Dict TaskId Task
     , visibility : TaskVisibility
     }
 
@@ -70,7 +75,7 @@ type Msg
     | TaskCreateRequested
     | TaskCreated Task
     | TimeReceivedForNewTask Time.Posix
-    | TaskToggled TaskId Bool
+    | TaskStatusToggled TaskId Bool
     | TaskEditing TaskId
     | TaskEdited TaskId String
     | TaskEditCancelled
@@ -91,7 +96,7 @@ view : Model -> Html Msg
 view model =
     let
         displayedTasks =
-            filterTasks model.visibility model.tasks
+            filterTasks model.visibility (Dict.values model.tasks)
     in
     div
         [ style "display" "flex"
@@ -131,7 +136,7 @@ view model =
                 , style "justify-content" "space-between"
                 , style "align-items" "center"
                 ]
-                [ p [ style "margin" "0" ] [ text (itemsLeftMessageFor (activeTasksFor model.tasks)) ]
+                [ p [ style "margin" "0" ] [ text (Dict.values model.tasks |> activeTasks |> itemsLeftMessage) ]
                 , div [ class "button-group", style "display" "flex", style "align-items" "center" ]
                     [ button [ onClick AllTasksDisplayed ] [ text "All" ]
                     , button [ onClick ActiveTasksDisplayed ] [ text "Active" ]
@@ -159,7 +164,7 @@ toRenderedTaskItemWithCheckbox task =
                     , class "todo-item__checkbox"
                     , type_ "checkbox"
                     , checked task.completed
-                    , onCheck (TaskToggled task.id)
+                    , onCheck (TaskStatusToggled task.id)
                     ]
                     []
                 , p [ class "todo-item__text", style "display" "inline", style "margin" "0", lineThroughWhenCompletedFor task ]
@@ -196,7 +201,7 @@ lineThroughWhenCompletedFor task =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        TaskToggled targetId isChecked ->
+        TaskStatusToggled targetId isChecked ->
             ( { model | tasks = toggleTaskStatusFor targetId isChecked model.tasks }, Cmd.none )
 
         TodoTextInputChanged newText ->
@@ -209,7 +214,7 @@ update msg model =
             update (TaskCreated (prepareTask model.todoText currentTime)) model
 
         TaskCreated task ->
-            ( addTask task model, Cmd.none )
+            ( { model | tasks = addTask task model.tasks, todoText = "" }, Cmd.none )
 
         TaskRemoved targetId ->
             ( { model | tasks = discardTaskFor targetId model.tasks }, Cmd.none )
@@ -240,14 +245,14 @@ filterTasks visibility tasks =
             tasks
 
         ActiveTasks ->
-            activeTasksFor tasks
+            activeTasks tasks
 
         CompletedTasks ->
             List.filter isTaskCompleted tasks
 
 
-activeTasksFor : List Task -> List Task
-activeTasksFor tasks =
+activeTasks : List Task -> List Task
+activeTasks tasks =
     List.filter isTaskActive tasks
 
 
@@ -261,27 +266,24 @@ isTaskActive =
     not << isTaskCompleted
 
 
-discardTaskFor : TaskId -> List Task -> List Task
+discardTaskFor : TaskId -> Dict TaskId Task -> Dict TaskId Task
 discardTaskFor targetId tasks =
-    List.filter (keepIfNotMatchFor targetId) tasks
+    Dict.remove targetId tasks
 
 
-keepIfNotMatchFor : TaskId -> Task -> Bool
-keepIfNotMatchFor targetId task =
-    task.id /= targetId
-
-
-toggleTaskStatusFor : String -> Bool -> List Task -> List Task
+toggleTaskStatusFor : String -> Bool -> Dict TaskId Task -> Dict TaskId Task
 toggleTaskStatusFor targetId isChecked tasks =
-    let
-        toggleStatusIfMatch task =
-            if task.id == targetId then
-                { task | completed = isChecked }
+    Dict.update targetId (toggleStatus isChecked) tasks
 
-            else
-                task
-    in
-    List.map toggleStatusIfMatch tasks
+
+toggleStatus : Bool -> Maybe Task -> Maybe Task
+toggleStatus isChecked maybeTask =
+    case maybeTask of
+        Just task ->
+            Just { task | completed = isChecked }
+
+        _ ->
+            Nothing
 
 
 prepareTask : String -> Time.Posix -> Task
@@ -294,13 +296,13 @@ createTaskFor id todoText =
     { id = id, text = todoText, completed = False, editing = False }
 
 
-addTask : Task -> Model -> Model
-addTask newTask model =
-    { model | tasks = newTask :: model.tasks, todoText = "" }
+addTask : Task -> Dict TaskId Task -> Dict TaskId Task
+addTask newTask tasks =
+    Dict.insert newTask.id newTask tasks
 
 
-itemsLeftMessageFor : List Task -> String
-itemsLeftMessageFor tasks =
+itemsLeftMessage : List Task -> String
+itemsLeftMessage tasks =
     let
         count =
             List.length tasks
