@@ -36,12 +36,14 @@ init =
     in
     { todoText = ""
     , tasks = initialTasks
+    , visibility = AllTasks
     }
 
 
 type alias Model =
     { todoText : String
     , tasks : List Task
+    , visibility : TaskVisibility
     }
 
 
@@ -57,10 +59,17 @@ type alias TaskId =
     String
 
 
+type TaskVisibility
+    = AllTasks
+    | ActiveTasks
+    | CompletedTasks
+
+
 type Msg
     = TodoTextInputChanged String
-    | TaskAddRequested
-    | TaskAdded Time.Posix String
+    | TaskCreateRequested
+    | TaskCreated Task
+    | TimeReceivedForNewTask Time.Posix
     | TaskToggled TaskId Bool
     | TaskEditing TaskId
     | TaskEdited TaskId String
@@ -82,7 +91,7 @@ view : Model -> Html Msg
 view model =
     let
         displayedTasks =
-            model.tasks
+            filterTasks model.visibility model.tasks
     in
     div
         [ style "display" "flex"
@@ -93,7 +102,7 @@ view model =
         [ h1
             [ style "font-size" "80px"
             , style "font-weight" "200"
-            , style "color" "#b83f45"
+            , style "color" "#B83F45"
             , style "text-transform" "uppercase"
             ]
             [ text "Todos" ]
@@ -101,6 +110,11 @@ view model =
             []
             [ input [ value model.todoText, placeholder "What need to be done?", onInput TodoTextInputChanged, onEnter TaskCreateRequested ] []
             , ul [] (List.map toRenderedTaskItemWithCheckbox displayedTasks)
+            , div []
+                [ button [onClick AllTasksDisplayed] [ text "All" ]
+                , button [onClick ActiveTasksDisplayed] [ text "Active" ]
+                , button [onClick CompletedTasksDisplayed] [ text "Completed" ]
+                ]
             ]
         ]
 
@@ -162,6 +176,15 @@ update msg model =
         TaskRemoved targetId ->
             ( { model | tasks = discardTaskFor targetId model.tasks }, Cmd.none )
 
+        AllTasksDisplayed ->
+            ( { model | visibility = AllTasks }, Cmd.none )
+
+        ActiveTasksDisplayed ->
+            ( { model | visibility = ActiveTasks }, Cmd.none )
+
+        CompletedTasksDisplayed ->
+            ( { model | visibility = CompletedTasks }, Cmd.none )
+
         _ ->
             ( model, Cmd.none )
 
@@ -172,8 +195,17 @@ update msg model =
 ----------------
 
 
+filterTasks : TaskVisibility -> List Task -> List Task
+filterTasks visibility tasks =
+    case visibility of
+        AllTasks ->
+            tasks
 
+        ActiveTasks ->
+            List.filter (\task -> not task.completed) tasks
 
+        CompletedTasks ->
+            List.filter (\task -> task.completed) tasks
 
 
 discardTaskFor : TaskId -> List Task -> List Task
