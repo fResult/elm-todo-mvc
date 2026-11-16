@@ -99,7 +99,7 @@ view model =
             [ text "Todos" ]
         , section
             []
-            [ input [ value model.todoText, placeholder "What need to be done?", onInput TodoTextInputChanged, onEnter TaskAddRequested ] []
+            [ input [ value model.todoText, placeholder "What need to be done?", onInput TodoTextInputChanged, onEnter TaskCreateRequested ] []
             , ul [] (List.map toRenderedTaskItemWithCheckbox displayedTasks)
             ]
         ]
@@ -150,11 +150,14 @@ update msg model =
         TodoTextInputChanged newText ->
             ( { model | todoText = newText }, Cmd.none )
 
-        TaskAddRequested ->
-            requestTaskCreation model
+        TaskCreateRequested ->
+            ( model, Time.now |> ElmTask.perform TimeReceivedForNewTask )
 
-        TaskAdded time newText ->
-            addTaskToSystem time newText model
+        TimeReceivedForNewTask currentTime ->
+            update (TaskCreated (prepareTask model.todoText currentTime)) model
+
+        TaskCreated task ->
+            ( addTask task model, Cmd.none )
 
         TaskRemoved targetId ->
             ( { model | tasks = discardTaskFor targetId model.tasks }, Cmd.none )
@@ -169,14 +172,8 @@ update msg model =
 ----------------
 
 
-requestTaskCreation : Model -> ( Model, Cmd Msg )
-requestTaskCreation model =
-    ( model, Time.now |> ElmTask.perform (prepareTaskWithText model.todoText) )
 
 
-prepareTaskWithText : String -> Time.Posix -> Msg
-prepareTaskWithText todoText currentTime =
-    TaskAdded currentTime todoText
 
 
 discardTaskFor : TaskId -> List Task -> List Task
@@ -187,18 +184,6 @@ discardTaskFor targetId tasks =
 keepIfNotMatchFor : TaskId -> Task -> Bool
 keepIfNotMatchFor targetId task =
     task.id /= targetId
-
-
-addTaskToSystem : Time.Posix -> String -> Model -> ( Model, Cmd Msg )
-addTaskToSystem time newText model =
-    let
-        newTask =
-            createTaskFor time newText
-
-        updatedModel =
-            addTask newTask model
-    in
-    ( updatedModel, Cmd.none )
 
 
 toggleTaskStatusFor : String -> Bool -> List Task -> List Task
@@ -214,15 +199,33 @@ toggleTaskStatusFor targetId isChecked tasks =
     List.map toggleStatusIfMatch tasks
 
 
-createTaskFor : Time.Posix -> String -> Task
-createTaskFor time todoText =
-    let
-        idFromTime =
-            (String.fromInt << Time.posixToMillis) time
-    in
-    { id = idFromTime, text = todoText, completed = False, editing = False }
+prepareTask : String -> Time.Posix -> Task
+prepareTask todoText =
+    flip createTaskFor todoText << idFromTime
+
+
+createTaskFor : TaskId -> String -> Task
+createTaskFor id todoText =
+    { id = id, text = todoText, completed = False, editing = False }
 
 
 addTask : Task -> Model -> Model
 addTask newTask model =
     { model | tasks = newTask :: model.tasks, todoText = "" }
+
+
+
+-------------
+--- UTILS ---
+-------------
+
+
+idFromTime : Time.Posix -> String
+idFromTime =
+    String.fromInt << Time.posixToMillis
+
+
+-- flip from standard library was removed for some reasons
+flip : (a -> b -> c) -> (b -> a -> c)
+flip f a b =
+    f b a
