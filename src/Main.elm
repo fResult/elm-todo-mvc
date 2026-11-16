@@ -122,14 +122,16 @@ view model =
                 , value model.todoText
                 ]
                 []
-            , ul [] (List.map toRenderedTaskItemWithCheckbox displayedTasks)
+            , ul [ style "list-style" "none", style "display" "flex", style "flex-direction" "column", style "gap" "4px" ]
+                (List.map toRenderedTaskItemWithCheckbox displayedTasks)
             , div
                 [ class "todo-list--footer"
                 , style "width" "100%"
                 , style "display" "flex"
                 , style "justify-content" "space-between"
+                , style "align-items" "center"
                 ]
-                [ p [] [ text (itemsLeftMessageFor (activeTasksFor model.tasks)) ]
+                [ p [ style "margin" "0" ] [ text (itemsLeftMessageFor (activeTasksFor model.tasks)) ]
                 , div [ class "button-group", style "display" "flex", style "align-items" "center" ]
                     [ button [ onClick AllTasksDisplayed ] [ text "All" ]
                     , button [ onClick ActiveTasksDisplayed ] [ text "Active" ]
@@ -142,19 +144,34 @@ view model =
 
 toRenderedTaskItemWithCheckbox : Task -> Html Msg
 toRenderedTaskItemWithCheckbox task =
-    li []
-        [ input [ id task.id, type_ "checkbox", checked task.completed, onCheck (TaskToggled task.id) ] []
-        , label [ for task.id ]
-            [ p
-                [ style "display" "inline", lineThroughWhenCompletedFor task ]
-                [ text task.text
-                , button
-                    [ style "padding" "4px"
-                    , ariaLabel "Remove Task"
-                    , onClick (TaskRemoved task.id)
-                    ]
-                    [ text "🗑️" ]
+    li [ class "todo-item" ]
+        [ div [ class "todo-item__container", style "display" "flex" ]
+            [ label
+                [ class "todo-item__toggling-wrapper"
+                , for task.id
+                , style "cursor" "pointer"
+                , style "padding" "8px 12px"
+                , style "display" "flex"
+                , style "gap" "4px"
                 ]
+                [ input
+                    [ id task.id
+                    , class "todo-item__checkbox"
+                    , type_ "checkbox"
+                    , checked task.completed
+                    , onCheck (TaskToggled task.id)
+                    ]
+                    []
+                , p [ class "todo-item__text", style "display" "inline", style "margin" "0", lineThroughWhenCompletedFor task ]
+                    [ text task.text ]
+                ]
+            , button
+                [ class "todo-item__remove-btn"
+                , style "padding" "4px"
+                , ariaLabel "Remove Task"
+                , onClick (TaskRemoved task.id)
+                ]
+                [ text "🗑️" ]
             ]
         ]
 
