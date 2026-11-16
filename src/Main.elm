@@ -1,4 +1,4 @@
-module Main exposing (main)
+module Main exposing (main, unwords)
 
 import Browser
 import Html exposing (Html, button, div, h1, input, label, li, p, section, text, ul)
@@ -257,7 +257,31 @@ idFromTime =
     String.fromInt << Time.posixToMillis
 
 
--- flip from standard library was removed for some reasons
+
+{- flip from standard library was removed for some reasons -}
+
+
 flip : (a -> b -> c) -> (b -> a -> c)
 flip f a b =
     f b a
+
+
+{-| Returns the word with a trailing "s" if count is not 1.
+
+    NOTE: This is only for regular nouns that add "s" directly.
+    Do not use this for irregular words (e.g., child -> children, fish -> fish)
+    or words requiring spelling rule changes (e.g., spy -> spies, bus -> buses).
+
+-}
+pluralizeRegular : String -> Int -> String
+pluralizeRegular text count =
+    if count == 1 then
+        text
+
+    else
+        text ++ "s"
+
+
+unwords : List String -> String
+unwords =
+    String.join " "
