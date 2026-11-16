@@ -2,8 +2,8 @@ module Main exposing (main, unwords)
 
 import Browser
 import Dict exposing (Dict)
-import Html exposing (Html, button, div, h1, input, label, li, node, p, section, text, ul)
-import Html.Attributes exposing (checked, class, for, hidden, id, placeholder, style, type_, value)
+import Html exposing (Html, a, button, div, footer, h1, input, label, li, node, p, section, text, ul)
+import Html.Attributes exposing (checked, class, for, href, id, placeholder, rel, style, target, type_, value)
 import Html.Attributes.Aria exposing (ariaLabel)
 import Html.Events exposing (onCheck, onClick, onInput)
 import Html.Events.Extra exposing (onEnter)
@@ -151,6 +151,12 @@ view model =
                     [ onClick CompletedTasksRemoved, hideWhenAllTasksActiveFor model.tasks ]
                     [ text "Clear completed" ]
                 ]
+            ]
+        , footer [ style "color" "#4d4d4d", style "margin" "65px auto 0", style "font-size" "0.75rem" ]
+            [ p []
+                [ text "Created by ", a [ href "https://github.com/fResult", target "_blank", rel "noopener noreferer", style "color" "inherit" ] [ text "fResult" ] ]
+            , p []
+                [ text "Part of ", a [ href "https://todomvc.com", target "_blank", rel "noopener noreferer", style "color" "inherit" ] [ text "TodoMVC" ] ]
             ]
         ]
 
