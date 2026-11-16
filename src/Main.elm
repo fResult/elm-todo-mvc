@@ -142,10 +142,23 @@ view model =
                     , button [ onClick ActiveTasksDisplayed ] [ text "Active" ]
                     , button [ onClick CompletedTasksDisplayed ] [ text "Completed" ]
                     ]
-                , button [ onClick CompletedTasksRemoved ] [ text "Clear completed" ]
+                , button
+                    [ onClick CompletedTasksRemoved, hideWhenAllTasksActiveFor model.tasks ]
+                    [ text "Clear completed" ]
                 ]
             ]
         ]
+
+
+hideWhenAllTasksActiveFor : Dict TaskId Task -> Html.Attribute Msg
+hideWhenAllTasksActiveFor tasks =
+    style "visibility"
+        (if allTasksActive tasks then
+            "hidden"
+
+         else
+            "visible"
+        )
 
 
 toRenderedTaskItemWithCheckbox : Task -> Html Msg
@@ -271,7 +284,7 @@ isTaskActive =
 
 
 discardTaskFor : TaskId -> Dict TaskId Task -> Dict TaskId Task
-discardTaskFor  =
+discardTaskFor =
     Dict.remove
 
 
@@ -320,6 +333,11 @@ itemsLeftMessage tasks =
             [ String.fromInt count, pluralizeRegular "item" count, "left" ]
     in
     unwords words
+
+
+allTasksActive : Dict TaskId Task -> Bool
+allTasksActive =
+    Dict.values >> List.all isTaskActive
 
 
 
