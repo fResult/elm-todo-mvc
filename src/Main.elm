@@ -112,7 +112,7 @@ view model =
             ]
             [ text "Todos" ]
         , section
-            [ style "min-width" "300px"
+            [ style "min-width" "375px"
             , style "display" "flex"
             , style "flex-direction" "column"
             , style "align-items" "center"
@@ -142,6 +142,7 @@ view model =
                     , button [ onClick ActiveTasksDisplayed ] [ text "Active" ]
                     , button [ onClick CompletedTasksDisplayed ] [ text "Completed" ]
                     ]
+                , button [ onClick CompletedTasksRemoved ] [ text "Clear completed" ]
                 ]
             ]
         ]
@@ -219,6 +220,9 @@ update msg model =
         TaskRemoved targetId ->
             ( { model | tasks = discardTaskFor targetId model.tasks }, Cmd.none )
 
+        CompletedTasksRemoved ->
+            ( { model | tasks = discardCompletedTasks model.tasks }, Cmd.none )
+
         AllTasksDisplayed ->
             ( { model | visibility = AllTasks }, Cmd.none )
 
@@ -257,8 +261,8 @@ activeTasks tasks =
 
 
 isTaskCompleted : Task -> Bool
-isTaskCompleted task =
-    task.completed == True
+isTaskCompleted =
+    .completed
 
 
 isTaskActive : Task -> Bool
@@ -269,6 +273,11 @@ isTaskActive =
 discardTaskFor : TaskId -> Dict TaskId Task -> Dict TaskId Task
 discardTaskFor targetId tasks =
     Dict.remove targetId tasks
+
+
+discardCompletedTasks : Dict TaskId Task -> Dict TaskId Task
+discardCompletedTasks tasks =
+    Dict.filter (always isTaskActive) tasks
 
 
 toggleTaskStatusFor : String -> Bool -> Dict TaskId Task -> Dict TaskId Task
