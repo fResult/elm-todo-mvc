@@ -2,8 +2,8 @@ module Main exposing (main, unwords)
 
 import Browser
 import Dict exposing (Dict)
-import Html exposing (Html, button, div, h1, input, label, li, p, section, text, ul)
-import Html.Attributes exposing (checked, class, for, id, placeholder, style, type_, value)
+import Html exposing (Html, button, div, h1, input, label, li, node, p, section, text, ul)
+import Html.Attributes exposing (checked, class, for, hidden, id, placeholder, style, type_, value)
 import Html.Attributes.Aria exposing (ariaLabel)
 import Html.Events exposing (onCheck, onClick, onInput)
 import Html.Events.Extra exposing (onEnter)
@@ -108,7 +108,7 @@ view model =
             [ style "font-size" "80px"
             , style "font-weight" "200"
             , style "color" "#B83F45"
-            , style "text-transform" "uppercase"
+            , style "text-transform" "lowercase"
             ]
             [ text "Todos" ]
         , section
@@ -118,16 +118,21 @@ view model =
             , style "align-items" "center"
             , style "gap" "8px"
             ]
-            [ input
+            [ node "style" [] [ text ".todo-text--input::placeholder { font-style: italic }" ]
+            , input
                 [ id "todo-text"
+                , class "todo-text--input"
                 , placeholder "What need to be done?"
                 , ariaLabel "Todo Text"
+                , style "width" "100%"
+                , style "height" "65px"
+                , style "font-size" "1.5rem"
                 , onInput TodoTextInputChanged
                 , onEnter TaskCreateRequested
                 , value model.todoText
                 ]
                 []
-            , ul [ style "list-style" "none", style "display" "flex", style "flex-direction" "column", style "gap" "4px" ]
+            , ul [ style "list-style" "none", style "padding" "0", style "display" "flex", style "flex-direction" "column", style "gap" "4px", style "width" "100%" ]
                 (List.map toRenderedTaskItemWithCheckbox displayedTasks)
             , div
                 [ class "todo-list--footer"
@@ -163,30 +168,42 @@ hideWhenAllTasksActiveFor tasks =
 
 toRenderedTaskItemWithCheckbox : Task -> Html Msg
 toRenderedTaskItemWithCheckbox task =
-    li [ class "todo-item" ]
-        [ div [ class "todo-item__container", style "display" "flex" ]
+    li [ class "todo-item", style "width" "100%" ]
+        [ div
+            [ class "todo-item__container"
+            , style "display" "flex"
+            , style "align-items" "center"
+            , style "gap" "1rem"
+            , style "height" "60px"
+            ]
             [ label
                 [ class "todo-item__toggling-wrapper"
                 , for task.id
                 , style "cursor" "pointer"
                 , style "padding" "8px 12px"
                 , style "display" "flex"
-                , style "gap" "4px"
+                , style "align-items" "center"
+                , style "flex" "1"
+                , style "font-size" "1.5rem"
+                , style "gap" "1rem"
                 ]
                 [ input
                     [ id task.id
                     , class "todo-item__checkbox"
+                    , style "width" "30px"
+                    , style "height" "30px"
                     , type_ "checkbox"
                     , checked task.completed
                     , onCheck (TaskStatusToggled task.id)
                     ]
                     []
-                , p [ class "todo-item__text", style "display" "inline", style "margin" "0", lineThroughWhenCompletedFor task ]
+                , p [ class "todo-item__text", style "display" "inline", style "margin" "0", lineThroughWhenCompletedFor task, subtleTextColoredWhenCompletedFor task ]
                     [ text task.text ]
                 ]
             , button
                 [ class "todo-item__remove-btn"
                 , style "padding" "4px"
+                , style "width" "2rem"
                 , ariaLabel "Remove Task"
                 , onClick (TaskRemoved task.id)
                 ]
@@ -203,6 +220,17 @@ lineThroughWhenCompletedFor task =
 
          else
             "none"
+        )
+
+
+subtleTextColoredWhenCompletedFor : Task -> Html.Attribute Msg
+subtleTextColoredWhenCompletedFor task =
+    style "color"
+        (if task.completed then
+            "#949494"
+
+         else
+            "#484848"
         )
 
 
